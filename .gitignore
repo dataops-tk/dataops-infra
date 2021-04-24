@@ -1,3 +1,6 @@
+# Env files
+.env
+
 # Config file (comment this line to modify the template):
 samples/infra-config.yml
 build
