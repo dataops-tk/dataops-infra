@@ -16,7 +16,7 @@ filter @message not like /INFO\sUsed/
 EOF
   dashboard_names = [
     for i, tap_spec in local.taps_specs :
-    "${tap_spec.name}${i}-to-${local.target.id}-v${var.pipeline_version_number}-${var.name_prefix}-TapDashboard"
+    "${tap_spec.name}${i}-to-${var.default_target}-v${var.pipeline_version_number}-${var.name_prefix}-TapDashboard"
   ]
   dashboard_urls = [
     for dashboard_name in local.dashboard_names :

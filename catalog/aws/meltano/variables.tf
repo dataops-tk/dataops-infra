@@ -24,30 +24,19 @@ variable "resource_tags" {
 ### Custom variables for this module ###
 ########################################
 
-# Tap and Target Config
-
-variable "taps" {
-  description = <<EOF
-A list of tap configurations with the following setting keys:
-
-- `id`       - The official id of the tap plugin to be used, without the 'tap-' prefix.
-- `name`     - The friendly name of the tap, without the 'tap-' prefix.
-- `schedule` - A list of one or more daily sync times in `HHMM` format. E.g.: `0400` for 4am, `1600` for 4pm.
-- `settings` - Map of tap settings to their values.
-- `secrets`  - Map of secrets names mapped to any of the following:
-               A. file path ("path/to/file") that contains a matching key name,
-               B. the file path and the json/yaml key ("path/to/file:key"),
-               C. the AWS Secrets Manager ID of an already stored secret
-EOF
-  type = list(object({
-    id       = string
-    name     = string
-    schedule = list(string)
-    settings = map(string)
-    secrets  = map(string)
-  }))
+variable "tz_utc_offset" {
+  type        = number
+  description = "Local timezone offset from UTC, in number of hours."
+}
+variable "meltano_yml_path" {
+  type        = string
+  description = "Path to local meltano.yml."
 }
 
+variable "default_target" {
+  type        = string
+  description = "target-athena"
+}
 variable "project_source" {
   description = <<EOF
 The source repo which contains your project source.
@@ -55,6 +44,11 @@ If provided as a local reference (without 'http' in the string) the project will
 Otherwise, a git-based connection to the repo will be attempted.
 EOF
   type        = string
+}
+
+variable "pipeline_version_number" {
+  type    = number
+  default = 1
 }
 
 # Data Lake Settings

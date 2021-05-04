@@ -1,6 +1,6 @@
 locals {
   source_files = toset([
-    for f in fileset(var.local_metadata_path, "*") :
+    for f in fileset(local.local_metadata_path, "*") :
     f
     if length([
       for tap_name in local.taps_specs.*.name :
@@ -10,7 +10,7 @@ locals {
   ])
   source_files_hash = join(",", [
     for filepath in local.source_files :
-    filebase64sha256("${var.local_metadata_path}/${filepath}")
+    filebase64sha256("${local.local_metadata_path}/${filepath}")
   ])
   unique_hash   = md5(local.source_files_hash)
   unique_suffix = substr(local.unique_hash, 0, 4)
@@ -31,8 +31,8 @@ resource "aws_s3_bucket_object" "s3_source_uploads" {
       "tap-snapshot-${local.unique_suffix}/${each.value}"
     ]
   )
-  source   = "${var.local_metadata_path}/${each.value}"
+  source   = "${local.local_metadata_path}/${each.value}"
   tags     = var.resource_tags
   metadata = {}
-  # etag     = filebase64sha256("${var.local_metadata_path}/${each.value}")
+  # etag     = filebase64sha256("${local.local_metadata_path}/${each.value}")
 }

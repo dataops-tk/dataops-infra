@@ -3,53 +3,37 @@
 *
 */
 
-# Timezone math:
-locals {
-  tz_hour_offset = (
-    contains(["PST"], var.scheduled_timezone) ? -8 :
-    contains(["PDT"], var.scheduled_timezone) ? -7 :
-    contains(["MST"], var.scheduled_timezone) ? -7 :
-    contains(["CST"], var.scheduled_timezone) ? -6 :
-    contains(["EST"], var.scheduled_timezone) ? -5 :
-    contains(["UTC", "GMT"], var.scheduled_timezone) ? 0 :
-    1 / 0
-    # ERROR: currently supported timezone code are: UTC, MST, GMT, CST, EST, PST and PDT
-  )
-}
+data "local_file" "meltano_yml" { filename = var.meltano_yml_path }
 
 # Target config:
 locals {
-  default_target_def = {
-    id = "s3-csv"
-    settings = {
-      s3_bucket     = local.data_lake_storage_bucket
-      s3_key_prefix = local.data_lake_storage_key_prefix
-    }
-    secrets = {}
-  }
-  target            = var.data_lake_type != "S3" || var.target != null ? var.target : local.default_target_def
-  target_env_prefix = "TARGET_${replace(upper(local.target.id), "-", "_")}_"
+  meltano_config      = yamldecode(data.local_file.meltano_yml.content)
+  local_metadata_path = abspath("${var.meltano_yml_path}/..}")
+  taps                = local.meltano_config["extractors"]
+  target              = local.meltano_config["loaders"][var.default_target]
+  target_env_prefix   = "TARGET_${replace(upper(var.default_target), "-", "_")}_"
 }
 
 # Tap config:
 locals {
   name_prefix = "${var.name_prefix}Tap-"
+
   tap_env_prefix = [
-    for tap in var.taps :
+    for tap in local.taps :
     "TAP_${replace(upper(tap.name), "-", "_")}_"
   ]
   taps_specs = [
-    for tap in var.taps :
+    for tap in local.taps :
     {
       id           = tap.id
       name         = coalesce(lookup(tap, "name", null), tap.id) # default to `id` if `name` not provided.
       schedule     = coalesce(lookup(tap, "schedule", null), []) # default to no schedule ([])
       settings     = tap.settings
       secrets      = tap.secrets
-      sync_command = "tapdance sync ${tap.name} ${local.target.id} ${join(" ", var.container_args)}"
+      sync_command = "tapdance sync ${tap.name} ${var.default_target} ${join(" ", var.container_args)}"
       image = coalesce(
         var.container_image_override,
-        "dataopstk/tapdance:${tap.id}-to-${local.target.id}${var.container_image_suffix}"
+        "dataopstk/tapdance:${tap.id}-to-${var.default_target}${var.container_image_suffix}"
       )
     }
   ]
@@ -71,8 +55,8 @@ module "ecs_tap_sync_task" {
   ecs_cluster_name     = module.ecs_cluster.ecs_cluster_name
   container_image      = local.taps_specs[count.index].image
   container_command    = local.taps_specs[count.index].sync_command
-  container_ram_gb     = var.container_ram_gb
-  container_num_cores  = var.container_num_cores
+  container_ram_gb     = var.elt_container_ram_gb
+  container_num_cores  = var.elt_container_num_cores
   use_private_subnet   = var.use_private_subnet
   use_fargate          = true
   permitted_s3_buckets = local.needed_s3_buckets
