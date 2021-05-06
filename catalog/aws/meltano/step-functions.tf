@@ -111,7 +111,7 @@ module "step_function" {
     "cron(${
       tonumber(substr(cron_expr, 2, 2))
       } ${
-      (24 + tonumber(substr(cron_expr, 0, 2)) - local.tz_utc_offset) % 24
+      (24 + tonumber(substr(cron_expr, 0, 2)) - var.tz_utc_offset) % 24
     } * * ? *)"
   ]
   state_machine_definition = local.state_machine_json[count.index]

@@ -8,7 +8,7 @@ locals {
   name_prefix = "${var.name_prefix}DBT-"
   admin_cidr  = var.admin_cidr
   admin_ports = ["8080", "10000"]
-  tz_hour_offset = (
+  tz_utc_offset = (
     contains(["PST"], var.scheduled_timezone) ? -8 :
     contains(["PDT"], var.scheduled_timezone) ? -7 :
     contains(["MST"], var.scheduled_timezone) ? -7 :
@@ -49,7 +49,7 @@ module "ecs_task" {
       "cron(${
         tonumber(substr(cron_expr, 2, 2))
         } ${
-        (24 + tonumber(substr(cron_expr, 0, 2)) - local.tz_hour_offset) % 24
+        (24 + tonumber(substr(cron_expr, 0, 2)) - local.tz_utc_offset) % 24
       } * * ? *)"
     ]
   ])

@@ -10,4 +10,8 @@
     },
     "editor.formatOnSave": true,
     "workbench.colorTheme": "Amethyst Dark",
+    "python.testing.promptToConfigure": false,
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
 }
